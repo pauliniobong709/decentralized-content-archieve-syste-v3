@@ -1,0 +1,23 @@
+[project]
+name = "sub"
+authors = []
+description = ""
+telemetry = false
+requirements = []
+cache_dir = "/home/runner/workspace/sub/./.requirements"
+boot_contracts = ["pox", "costs-v2", "bns"]
+[contracts.Cosmic-digital-protocol]
+path = "contracts/Cosmic-digital-protocol.clar"
+
+[repl]
+costs_version = 2
+parser_version = 2
+
+[repl.analysis]
+passes = ["check_checker"]
+
+[repl.analysis.check_checker]
+strict = false
+trusted_sender = false
+trusted_caller = false
+callee_filter = false
