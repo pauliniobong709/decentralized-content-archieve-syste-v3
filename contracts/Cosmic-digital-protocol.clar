@@ -199,6 +199,56 @@
   )
 )
 
+;; Advanced content modification system with enhanced security protocols
+;; Allows authorized users to update existing content metadata and properties
+;; Implements comprehensive validation and authorization checks
+;; 
+;; Parameters:
+;; - content-sequence-id: unique identifier of content to modify
+;; - updated-content-title: new title for the content item
+;; - updated-storage-size: new storage size information
+;; - updated-content-summary: new descriptive summary
+;; - updated-classification-labels: new metadata tags
+;; 
+;; Returns: success confirmation or appropriate error response
+(define-public (modify-existing-content-record
+  (content-sequence-id uint)
+  (updated-content-title (string-ascii 64))
+  (updated-storage-size uint)
+  (updated-content-summary (string-ascii 128))
+  (updated-classification-labels (list 10 (string-ascii 32)))
+)
+  (let
+    (
+      (existing-content-data (unwrap! (map-get? distributed-content-archive-database { content-sequence-id: content-sequence-id })
+        content-record-missing-error))
+    )
+    ;; Multi-layered security validation ensuring proper authorization
+    ;; Verifies both content existence and user permissions before modifications
+    (asserts! (verify-content-record-existence content-sequence-id) content-record-missing-error)
+    (asserts! (is-eq (get content-owner-principal existing-content-data) contract-caller) insufficient-authorization-privileges-error)
+    (asserts! (> (len updated-content-title) u0) invalid-input-data-error)
+    (asserts! (< (len updated-content-title) u65) invalid-input-data-error)
+    (asserts! (> updated-storage-size u0) storage-capacity-overflow-error)
+    (asserts! (< updated-storage-size u1000000000) storage-capacity-overflow-error)
+    (asserts! (> (len updated-content-summary) u0) invalid-input-data-error)
+    (asserts! (< (len updated-content-summary) u129) invalid-input-data-error)
+    (asserts! (validate-complete-metadata-label-collection updated-classification-labels) data-format-validation-failure-error)
+
+    ;; Atomic update operation preserving original registration metadata
+    ;; Updates only modifiable fields while maintaining system integrity
+    (map-set distributed-content-archive-database
+      { content-sequence-id: content-sequence-id }
+      (merge existing-content-data {
+        content-title-identifier: updated-content-title,
+        content-storage-size-in-bytes: updated-storage-size,
+        detailed-content-summary: updated-content-summary,
+        metadata-classification-labels: updated-classification-labels
+      })
+    )
+    (ok true)
+  )
+)
 
 ;; Secure ownership transfer protocol with comprehensive validation
 ;; Enables authorized transfer of content ownership between principals
